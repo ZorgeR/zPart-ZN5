@@ -1,0 +1,56 @@
+#!/bin/sh
+
+# zPart - Zorge.R - motofan.ru - 2010
+# small disk part utility
+
+#zpdir=${0%/*}
+zpdir="/ezxlocal/zPart"
+
+kill `pidof mystuff`
+kill `pidof mgxbox`
+kill `pidof MgxBox`
+kill `pidof mpkgbox21`
+kill `pidof mpkgbox2`
+
+####################
+# Lang block start #
+####################
+#--|local upd
+LANGSTR=`grep '^LanguageType = ' /ezxlocal/download/appwrite/setup/ezx_system.cfg | sed 's,^LanguageType = ,,'`
+if [ "$LANGSTR" = "" ]
+then
+	LANGSTR="en-us"
+fi
+#--|upd lng file
+if [ ! -f "${zpdir}/lng/${LANGSTR}.lng" ]
+then
+	. "${zpdir}/lng/en-gb.lng"
+else
+	. "${zpdir}/lng/${LANGSTR}.lng"
+fi
+##################
+# Lang block end #
+##################
+mkfs_ext2="/ezxlocal/zPart/mkfs.ext2"
+mkfs_ext3="/ezxlocal/zPart/mkfs.ext3"
+mkfs_swap="/ezxlocal/zPart/mkswap"
+if [ -f /bin/mkfs.ext2 ]; then mkfs_ext2="/bin/mkfs.ext2"; fi
+if [ -f /bin/mkfs.ext3 ]; then mkfs_ext3="/bin/mkfs.ext3"; fi
+if [ -f /bin/mkswap ]; then mkfs_ext3="/bin/mkswap"; fi
+
+showRadio "zPart $zp_vers" "$zp_head" "$zp_part" "$zp_restore" "$zp_info"
+case $? in
+    1)
+		. $zpdir/init.zPart
+	;;
+	2)
+		. $zpdir/restore.sd
+	;;
+	3)
+		showQ "zPart $zp_vers" "$zp_info_text" 2
+		$zpdir/start.zPart
+	;;
+	*)
+	exit 0
+	;;
+esac

@@ -1,0 +1,39 @@
+﻿# English language pack for zPart
+
+# start.zPart
+zp_vers="1.5.1"
+zp_head="Select actions:"
+zp_part="Part MemoryCard"
+zp_restore="Restore MemoryCard"
+zp_info="About"
+zp_info_text="zPart - application for manage you MicroSD card, and part it like a |vfat|swap| , |vfat|swap|ext| or |vfat|ext|swap|, by user choice. Also You can select type of EXT pertition, and partition size. Author - Zorge.R - motofan.ru - 2010."
+
+# restore.sd
+zp_restore_start="Are You Sure? All data on MicroSD will be lost, and all partition deleted. Standart Partition will be store."
+zp_restore_done="Standart partition recovered. Phone will be restart."
+
+# init.zPart
+zp_head_select_ext="Select type of EXT partition:"
+zp_select_ext2="Ext2"
+zp_select_ext3="Ext3"
+zp_done="All partition created. All disc mounted. (You can see Swap in zTaskMan). Recommended to restart Phone now."
+zp_head_part="Choice Partition structures:"
+zp_swap_custom="vfat|swap"
+zp_ext_custom="vfat|ext"
+zp_swap_ext_custom="vfat|swap|ext"
+zp_ext_swap_custom="vfat|ext|swap"
+
+zp_err_pure_number="Error. Pure string."
+zp_err_digit="Error. You must Input Only Digits."
+
+zp_enter_sdsize_swap="input vfat size in MB. All free space will be stored by swap partition."
+zp_enter_sdsize_ext="input vfat size in MB. All free space will be stored by ext partition."
+
+zp_enter_sdsize_vfat="Input vfat size in MB."
+
+zp_enter_swapsize_swap_ext="Input swap size in MB. All free space on memory card will be stored by ext partition."
+zp_enter_extsize_ext_swap="Input ext size in MB. All free space on memory card will be stored by swap partition."
+
+
+
+

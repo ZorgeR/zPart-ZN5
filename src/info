@@ -1,0 +1,8 @@
+name = zPart
+info.ru = Memory card partition control - motofan.ru
+info.en-gb = Memory card partition control - motofan.ru
+info.uk = Memory card partition control - motofan.ru
+version = 1.5.1
+author = Zorge.R
+lang = Russian, Ukraine, English
+sizeafterinstall = 285kb

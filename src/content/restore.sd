@@ -1,0 +1,24 @@
+#!/bin/sh
+
+showQ "zPart $zp_vers" "$zp_restore_start" 1
+retr=$?
+	if [ $retr -eq 1 ]
+	then
+		/etc/initservices/services/umountMMCSD.sh
+		umount /mmc/ext
+		umount /mmc/mmca2
+		umount /mmc/mmcb1
+		swapoff /dev/mmc/blk0/part2
+		swapoff /dev/mmc/blk0/part3
+		
+		/etc/fdisk_mmc.sh /dev/mmca
+		/sbin/mkdosfs /dev/mmca1
+		
+		showQ "zPart $zp_vers" "$zp_restore_done" 2
+		mot_reboot
+	else
+		$zpdir/start.zPart
+	fi
+
+
+

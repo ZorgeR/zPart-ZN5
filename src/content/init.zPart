@@ -1,0 +1,389 @@
+#!/bin/sh
+
+# zPart - Zorge.R - motofan.ru - 2010
+# small disk part utility
+
+rm -f /ezxlocal/zPart/config
+rm -f /ezxlocal/zPart/stat
+
+umountC()
+{
+	# размонтируем диск
+	/etc/initservices/services/umountMMCSD.sh
+	sleep 3s
+	umount /mmc/ext
+	umount /mmc/mmca2
+	umount /mmc/mmcb1
+	sleep 3s
+	swapoff /dev/mmc/blk0/part2
+	swapoff /dev/mmc/blk0/part3
+}
+
+partSWAP()
+{
+	# разбиваем диск на 2 раздела  |vfat|swap|
+echo "
+
+d
+1
+
+d
+2
+
+d
+3
+
+d
+
+n
+p
+1
+
++"$SDSIZE"M
+
+n
+p
+2
+
+
+
+
+t
+1
+6
+t
+2
+82
+w
+" > /ezxlocal/zPart/config
+	busybox fdisk /dev/mmc/blk0/disc < /ezxlocal/zPart/config
+
+/etc/initservices/services/umountMMCSD.sh
+
+swapNumber="2"
+extType="0"
+extNumber="0"
+touchswapison="1"
+
+}
+
+partEXT()
+{
+	# разбиваем диск на 2 раздела  |vfat|ext|
+echo "
+
+d
+1
+
+d
+2
+
+d
+3
+
+d
+
+n
+p
+1
+
++"$SDSIZE"M
+
+n
+p
+2
+
+
+
+
+t
+1
+6
+w
+" > /ezxlocal/zPart/config
+	busybox fdisk /dev/mmc/blk0/disc < /ezxlocal/zPart/config
+
+/etc/initservices/services/umountMMCSD.sh
+
+extNumber="2"
+touchswapison="0"
+
+}
+
+partSwapExt()
+{
+	# разбиваем диск на 3 раздела |vfat|swap|ext|
+echo "
+
+d
+1
+
+d
+2
+
+d
+3
+
+d
+
+n
+p
+1
+
++"$SDSIZE"M
+
+n
+p
+2
+
++"$SWAPSIZE"M
+
+n
+p
+3
+
+
+t
+1
+6
+t
+2
+82
+w
+" > /ezxlocal/zPart/config
+	busybox fdisk /dev/mmc/blk0/disc < /ezxlocal/zPart/config
+
+/etc/initservices/services/umountMMCSD.sh
+
+extNumber="3"
+swapNumber="2"
+touchswapison="1"
+
+}
+
+partExtSwap()
+{
+	# разбиваем диск на 3 раздела |vfat|ext|swap|
+echo "
+
+d
+1
+
+d
+2
+
+d
+3
+
+d
+
+n
+p
+1
+
++"$SDSIZE"M
+
+n
+p
+2
+
++"$EXTSIZE"M
+
+n
+p
+3
+
+
+t
+1
+6
+t
+3
+82
+w
+" > /ezxlocal/zPart/config
+	busybox fdisk /dev/mmc/blk0/disc < /ezxlocal/zPart/config
+
+/etc/initservices/services/umountMMCSD.sh
+
+extNumber="2"
+swapNumber="3"
+touchswapison="1"
+
+}
+
+selectExtType()
+{
+		showRadio "zPart $zp_vers" "$zp_head_select_ext" "$zp_select_ext2" "$zp_select_ext3"
+		case $? in
+		1)
+			extType="2"
+		;;
+		2)
+			extType="3"
+		;;
+		*)
+		exit 0
+		;;
+		esac
+}
+
+formatSWAP()
+{
+	# форматируем vfat
+	/sbin/mkdosfs /dev/mmc/blk0/part1
+	# форматируем swap раздел
+	$mkfs_swap /dev/mmc/blk0/part2
+}
+
+formatExt3()
+{
+	# форматируем vfat
+	/sbin/mkdosfs /dev/mmc/blk0/part1
+	# форматируем swap раздел
+	$mkfs_swap /dev/mmc/blk0/part$swapNumber
+	# форматируем ext раздел
+	$mkfs_ext3 /dev/mmc/blk0/part$extNumber
+}
+
+formatExt2()
+{
+	# форматируем vfat
+	/sbin/mkdosfs /dev/mmc/blk0/part1
+	# форматируем swap раздел
+	$mkfs_swap /dev/mmc/blk0/part$swapNumber
+	# форматируем ext раздел
+	$mkfs_ext2 /dev/mmc/blk0/part$extNumber
+}
+
+infoshow()
+{
+	# выводим информацию
+	busybox fdisk -l /dev/mmc/blk0/disc
+}
+
+mountC()
+{
+	# подключаем swap
+	swapon /dev/mmc/blk0/part$swapNumber
+	# подключаем ext
+	mount -t ext$extType -o noatime,rw,exec /dev/mmc/blk0/part$extNumber /mmc/ext
+	# подключаем vfat
+	/etc/initservices/services/mountMMCSD.sh
+	# если раздел Ext2, создаем флаг. Если нет, удаляем.
+	if [ $extType -eq "2" ]; then touch /mmc/mmca1/.system/EXT2_FLAG; else rm /mmc/mmca1/.system/EXT2_FLAG; fi
+	# если раздел Ext третий раздел, ставим флаг, если нет удаляем.
+	if [ $extNumber -eq "3" ]; then touch /mmc/mmca1/.system/ReverseSD; else rm /mmc/mmca1/.system/ReverseSD; fi
+	# добавляем флаг для свапа, если он включен
+	if [ $touchswapison -eq "1" ]; then touch /mmc/mmca1/.system/SwapisON; else rm /mmc/mmca1/.system/SwapisON; fi
+}
+
+allDone()
+{
+	showQ "zPart $zp_vers" "$zp_done" 2
+}
+
+checkDigit()
+{
+if [ $1 -eq "" ]
+then
+    showNotify "zPart" "$zp_err_pure_number"  1 1
+	exit
+fi
+
+echo $1 | egrep '^[0-9]+$' >/dev/null 2>&1
+if [ "$?" -eq "0" ]
+then
+	echo "digit correct"
+else
+    showQ "zPart" "$zp_err_digit" 2
+	exit
+fi
+}
+
+statusUPD()
+{
+if [ -f /ezxlocal/zPart/stat ]; then statpc=`cat /ezxlocal/zPart/stat`; else statpc=$1; fi
+showNotify "zPart" "$statpc%" 1 1
+let statpc=$statpc+23
+echo "$statpc" > /ezxlocal/zPart/stat
+}
+showRadio "zPart $zp_vers" "$zp_head_part" "$zp_swap_custom" "$zp_ext_custom" "$zp_swap_ext_custom" "$zp_ext_swap_custom"
+case $? in
+  	  1)
+		# разбиваем на | vfat | swap |
+		showTextEntry /ezxlocal/zPart/SDSIZEis "zPart $zp_vers" "$zp_enter_sdsize_swap" 0
+		SDSIZE=`cat /ezxlocal/zPart/SDSIZEis`
+		statusUPD 23
+		checkDigit $SDSIZE
+		statusUPD
+		umountC
+		partSWAP
+		statusUPD
+		formatSWAP
+		infoshow
+		statusUPD
+		mountC
+		allDone
+	;;
+    	2)
+		# разбиваем на | vfat | ext |
+		showTextEntry /ezxlocal/zPart/SDSIZEis "zPart $zp_vers" "$zp_enter_sdsize_ext" 0
+		SDSIZE=`cat /ezxlocal/zPart/SDSIZEis`
+		statusUPD 23
+		checkDigit $SDSIZE
+		selectExtType
+		statusUPD
+		umountC
+		partEXT
+		statusUPD
+		formatExt$extType
+		infoshow
+		statusUPD
+		mountC
+		allDone
+	;;
+	3)
+		# разбиваем на | vfat | swap | ext |
+		showTextEntry /ezxlocal/zPart/SDSIZEis "zPart $zp_vers" "$zp_enter_sdsize_vfat" 0
+		SDSIZE=`cat /ezxlocal/zPart/SDSIZEis`
+		checkDigit $SDSIZE
+		showTextEntry /ezxlocal/zPart/SWAPSIZEis "zPart $zp_vers" "$zp_enter_swapsize_swap_ext" 0
+		SWAPSIZE=`cat /ezxlocal/zPart/SWAPSIZEis`
+		checkDigit $SWAPSIZE
+		selectExtType
+		statusUPD 23
+		umountC
+		statusUPD
+		partSwapExt
+		statusUPD
+		formatExt$extType
+		statusUPD
+		infoshow
+		mountC
+		allDone
+	;;
+	4)
+		# разбиваем на | vfat | ext | swap |
+		showTextEntry /ezxlocal/zPart/SDSIZEis "zPart $zp_vers" "$zp_enter_sdsize_vfat" 0
+		SDSIZE=`cat /ezxlocal/zPart/SDSIZEis`
+		checkDigit $SDSIZE
+		showTextEntry /ezxlocal/zPart/SWAPSIZEis "zPart $zp_vers" "$zp_enter_extsize_ext_swap" 0
+		SWAPSIZE=`cat /ezxlocal/zPart/SWAPSIZEis`
+		selectExtType
+		statusUPD 23
+		umountC
+		statusUPD
+		partExtSwap
+		statusUPD
+		formatExt$extType
+		statusUPD
+		infoshow
+		mountC
+		allDone
+	;;
+	*)
+	exit 0
+	;;
+esac
+
